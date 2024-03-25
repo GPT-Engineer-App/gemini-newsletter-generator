@@ -1,0 +1,45 @@
+from flask import Flask, request, jsonify
+from dagster import pipeline, solid
+from google.cloud import aiplatform
+import praw
+
+app = Flask(__name__)
+
+# Initialize Reddit API client
+reddit = praw.Reddit(client_id='your_client_id',
+                     client_secret='your_client_secret',
+                     user_agent='your_user_agent')
+
+# Initialize Google Cloud Vertex SDK client
+aiplatform.init(project='your_project_id')
+
+@solid
+def fetch_reddit_comments(context, query):
+    subreddit = reddit.subreddit('all')
+    comments = []
+    for comment in subreddit.search(query, limit=10):
+        comments.append(comment.body)
+    return comments
+
+@solid
+def generate_newsletter(context, comments):
+    prompt = f"Generate a newsletter based on the following Reddit comments:\n\n{comments}"
+    model = aiplatform.Model.from_pretrained_model('gemini-model-id')
+    response = model.predict(prompt)
+    newsletter = response.text
+    return newsletter
+
+@pipeline
+def reddit_newsletter_pipeline(query):
+    comments = fetch_reddit_comments(query)
+    newsletter = generate_newsletter(comments)
+    return newsletter
+
+@app.route('/generate-newsletter', methods=['POST'])
+def generate_newsletter_route():
+    query = request.json['query']
+    newsletter = reddit_newsletter_pipeline(query).execute_in_process()
+    return jsonify({'newsletter': newsletter})
+
+if __name__ == '__main__':
+    app.run()
