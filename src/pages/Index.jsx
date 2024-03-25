@@ -1,15 +1,20 @@
-// Complete the Index page component here
-// Use chakra-ui
-import { Button } from "@chakra-ui/react"; // example
-import { FaPlus } from "react-icons/fa"; // example - use react-icons/fa for icons
+import { useState } from "react";
+import { Heading, VStack } from "@chakra-ui/react";
+import SearchBar from "../components/SearchBar";
 
 const Index = () => {
-  // TODO: Create the website here!
+  const [query, setQuery] = useState("");
+
+  const handleSearch = () => {
+    console.log(`Searching for: ${query}`);
+  };
+
   return (
-    <Button>
-      Hello world! <FaPlus />
-    </Button>
-  ); // example
+    <VStack spacing={8} align="center" mt={8}>
+      <Heading>Newsletter Generator</Heading>
+      <SearchBar query={query} setQuery={setQuery} onSearch={handleSearch} />
+    </VStack>
+  );
 };
 
 export default Index;
